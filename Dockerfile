@@ -1,7 +1,17 @@
-FROM golang:1.15.2-alpine3.12
-RUN mkdir /app
-ADD . /app
+FROM golang:latest
+
+LABEL maintainer="Saurabh Singh Yadav <saurabh3460@gmail.com>"
+
 WORKDIR /app
+
+COPY go.mod go.sum ./
+
 RUN go mod download
-RUN go build -o main .
-CMD ["/app/main"]
+
+COPY . .
+
+RUN go build -o main
+
+EXPOSE 8000
+
+CMD ["./main"]
