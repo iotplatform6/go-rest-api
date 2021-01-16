@@ -4,7 +4,7 @@ LABEL maintainer="Saurabh Singh Yadav <saurabh3460@gmail.com>"
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+COPY go.mod ./
 
 RUN go mod download
 
