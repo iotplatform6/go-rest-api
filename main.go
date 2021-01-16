@@ -1,179 +1,101 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 
-	"github.com/faygun/go-rest-api/helper"
-	"github.com/faygun/go-rest-api/models"
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-//Connection mongoDB with helper class
-var collection = helper.ConnectDB()
+// Order represents the model for an order
+type Order struct {
+	OrderID      string    `json:"orderId"`
+	CustomerName string    `json:"customerName"`
+	OrderedAt    time.Time `json:"orderedAt"`
+	Items        []Item    `json:"items"`
+}
 
-func getBooks(w http.ResponseWriter, r *http.Request) {
+// Item represents the model for an item in the order
+type Item struct {
+	ItemID      string `json:"itemId"`
+	Description string `json:"description"`
+	Quantity    int    `json:"quantity"`
+}
+
+func createOrder(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	var order Order
+	json.NewDecoder(r.Body).Decode(&order)
+	prevOrderID++
+	order.OrderID = strconv.Itoa(prevOrderID)
+	orders = append(orders, order)
+	json.NewEncoder(w).Encode(order)
+}
 
-	// we created Book array
-	var books []models.Book
+func getOrders(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(orders)
+}
 
-	// bson.M{},  we passed empty filter. So we want to get all data.
-	cur, err := collection.Find(context.TODO(), bson.M{})
-
-	if err != nil {
-		helper.GetError(err, w)
-		return
-	}
-
-	// Close the cursor once finished
-	/*A defer statement defers the execution of a function until the surrounding function returns.
-	simply, run cur.Close() process but after cur.Next() finished.*/
-	defer cur.Close(context.TODO())
-
-	for cur.Next(context.TODO()) {
-
-		// create a value into which the single document can be decoded
-		var book models.Book
-		// & character returns the memory address of the following variable.
-		err := cur.Decode(&book) // decode similar to deserialize process.
-		if err != nil {
-			log.Fatal(err)
+func getOrder(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	inputOrderID := params["orderId"]
+	for _, order := range orders {
+		if order.OrderID == inputOrderID {
+			json.NewEncoder(w).Encode(order)
+			return
 		}
-
-		// add item our array
-		books = append(books, book)
 	}
-
-	if err := cur.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	json.NewEncoder(w).Encode(books) // encode similar to serialize process.
 }
 
-func getBook(w http.ResponseWriter, r *http.Request) {
-	// set header.
+func updateOrder(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
-	var book models.Book
-	// we get params with mux.
-	var params = mux.Vars(r)
-
-	// string to primitive.ObjectID
-	id, _ := primitive.ObjectIDFromHex(params["id"])
-
-	// We create filter. If it is unnecessary to sort data for you, you can use bson.M{}
-	filter := bson.M{"_id": id}
-	err := collection.FindOne(context.TODO(), filter).Decode(&book)
-
-	if err != nil {
-		helper.GetError(err, w)
-		return
+	params := mux.Vars(r)
+	inputOrderID := params["orderId"]
+	for i, order := range orders {
+		if order.OrderID == inputOrderID {
+			orders = append(orders[:i], orders[i+1:]...)
+			var updatedOrder Order
+			json.NewDecoder(r.Body).Decode(&updatedOrder)
+			orders = append(orders, updatedOrder)
+			json.NewEncoder(w).Encode(updatedOrder)
+			return
+		}
 	}
-
-	json.NewEncoder(w).Encode(book)
 }
 
-func createBook(w http.ResponseWriter, r *http.Request) {
+func deleteOrder(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
-	var book models.Book
-
-	// we decode our body request params
-	_ = json.NewDecoder(r.Body).Decode(&book)
-
-	// insert our book model.
-	result, err := collection.InsertOne(context.TODO(), book)
-
-	if err != nil {
-		helper.GetError(err, w)
-		return
+	params := mux.Vars(r)
+	inputOrderID := params["orderId"]
+	for i, order := range orders {
+		if order.OrderID == inputOrderID {
+			orders = append(orders[:i], orders[i+1:]...)
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 	}
-
-	json.NewEncoder(w).Encode(result)
 }
 
-func updateBook(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	var params = mux.Vars(r)
-
-	//Get id from parameters
-	id, _ := primitive.ObjectIDFromHex(params["id"])
-
-	var book models.Book
-
-	// Create filter
-	filter := bson.M{"_id": id}
-
-	// Read update model from body request
-	_ = json.NewDecoder(r.Body).Decode(&book)
-
-	// prepare update model.
-	update := bson.D{
-		{"$set", bson.D{
-			{"isbn", book.Isbn},
-			{"title", book.Title},
-			{"author", bson.D{
-				{"firstname", book.Author.FirstName},
-				{"lastname", book.Author.LastName},
-			}},
-		}},
-	}
-
-	err := collection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&book)
-
-	if err != nil {
-		helper.GetError(err, w)
-		return
-	}
-
-	book.ID = id
-
-	json.NewEncoder(w).Encode(book)
-}
-
-func deleteBook(w http.ResponseWriter, r *http.Request) {
-	// Set header
-	w.Header().Set("Content-Type", "application/json")
-
-	// get params
-	var params = mux.Vars(r)
-
-	// string to primitve.ObjectID
-	id, err := primitive.ObjectIDFromHex(params["id"])
-
-	// prepare filter.
-	filter := bson.M{"_id": id}
-
-	deleteResult, err := collection.DeleteOne(context.TODO(), filter)
-
-	if err != nil {
-		helper.GetError(err, w)
-		return
-	}
-
-	json.NewEncoder(w).Encode(deleteResult)
-}
-
-// var client *mongo.Client
+var orders []Order
+var prevOrderID = 0
 
 func main() {
-	//Init Router
-	r := mux.NewRouter()
+	router := mux.NewRouter()
+	// Create
+	router.HandleFunc("/orders", createOrder).Methods("POST")
+	// Read
+	router.HandleFunc("/orders/{orderId}", getOrder).Methods("GET")
+	// Read-all
+	router.HandleFunc("/orders", getOrders).Methods("GET")
+	// Update
+	router.HandleFunc("/orders/{orderId}", updateOrder).Methods("PUT")
+	// Delete
+	router.HandleFunc("/orders/{orderId}", deleteOrder).Methods("DELETE")
 
-	r.HandleFunc("/api/books", getBooks).Methods("GET")
-	r.HandleFunc("/api/books/{id}", getBook).Methods("GET")
-	r.HandleFunc("/api/books", createBook).Methods("POST")
-	r.HandleFunc("/api/books/{id}", updateBook).Methods("PUT")
-	r.HandleFunc("/api/books/{id}", deleteBook).Methods("DELETE")
-
-	config := helper.GetConfiguration()
-	log.Fatal(http.ListenAndServe(config.Port, r))
-
+	log.Fatal(http.ListenAndServe(":8000", router))
 }
