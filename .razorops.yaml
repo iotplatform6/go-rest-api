@@ -5,11 +5,11 @@ global:
     os_image: ubuntu
 
 tasks:
-  build-image:
+  deploy:
     steps:
     - docker-build:
-       image: "docker/saurabh3460/restapi01"
-       push: true
-       tags: ["${CI_COMMIT_SHA}", "latest"]
-       dockerfile: Dockerfile
-       context: .
+      image: "docker/saurabh3460/restapi01"
+      push: true
+       # tags: ["${CI_COMMIT_SHA}", "latest"]
+       # dockerfile: Dockerfile
+       # context: .
