@@ -6,5 +6,5 @@ tasks:
   deploy:
     steps:
       - docker-build:
-          image: docker/saurabh3460/restapi01
+          image: hub.docker.com/repository/docker/saurabh3460/restapi01/general
           push: true
