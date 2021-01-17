@@ -8,6 +8,6 @@ tasks:
     - docker-build:
        image: docker/saurabh3460/restapi01
        push: true
-       tags: ["${CI_COMMIT_SHA}", "latest"]
+       tags: ["${CI_COMMIT_SHA}"]
        dockerfile: Dockerfile
        context: .
