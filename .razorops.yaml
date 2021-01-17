@@ -1,0 +1,5 @@
+tasks:
+  build-image:
+    steps:
+      - docker/build: docker/saurabh3460/restapi01
+        push: true
