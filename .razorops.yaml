@@ -8,7 +8,7 @@ tasks:
   build-image:
     steps:
     - docker-build:
-       image: "hub.docker.com/repository/docker/saurabh3460/restapi01"
+       image: "docker/saurabh3460/restapi01"
        push: true
        tags: ["${CI_COMMIT_SHA}", "latest"]
        dockerfile: Dockerfile
