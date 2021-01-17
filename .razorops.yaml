@@ -1,3 +1,5 @@
+version: v2
+
 global:
   runner:
     os_image: ubuntu
@@ -8,6 +10,6 @@ tasks:
     - docker-build:
        image: docker/saurabh3460/restapi01
        push: true
-       tags: ["${CI_COMMIT_SHA}"]
+       tags: ["${CI_COMMIT_SHA}", "latest"]
        dockerfile: Dockerfile
        context: .
