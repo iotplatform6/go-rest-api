@@ -8,8 +8,8 @@ tasks:
   deploy:
     steps:
     - docker-build:
-      image: "docker/saurabh3460/restapi01"
-      push: true
+        image: "docker/saurabh3460/restapi01"
+        push: true
        # tags: ["${CI_COMMIT_SHA}", "latest"]
        # dockerfile: Dockerfile
        # context: .
