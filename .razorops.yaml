@@ -7,7 +7,7 @@ tasks:
     type: build
     steps:
       - docker-build:
-          image: hub.docker.com/repository/docker/saurabh3460/restapi01
+          image: saurabh3460/restapi01
           push: true
 
 # tasks:
