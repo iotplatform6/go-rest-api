@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-
+	"fmt"
 	"github.com/gorilla/mux"
 )
 
@@ -34,6 +34,7 @@ func createOrder(w http.ResponseWriter, r *http.Request) {
 	orders = append(orders, order)
 	json.NewEncoder(w).Encode(order)
 }
+
 
 func getOrders(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -81,6 +82,10 @@ func deleteOrder(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func message(w http.ResponseWriter, r *http.Request) {
+	 fmt.Fprintf(w, "Welcome to my website!")
+}
+
 var orders []Order
 var prevOrderID = 0
 
@@ -96,6 +101,7 @@ func main() {
 	router.HandleFunc("/orders/{orderId}", updateOrder).Methods("PUT")
 	// Delete
 	router.HandleFunc("/orders/{orderId}", deleteOrder).Methods("DELETE")
-
+	// Test message
+	router.HandleFunc("/message", message).Methods("GET")
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
